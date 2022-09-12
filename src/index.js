@@ -53,14 +53,39 @@ app.post('/account', (request, response) => {
     statement: [],
   });
 
-  registeredCustomer = customers.find((customer) => customer.cpf === cpf)
+  registeredCustomer = customers.find((customer) => customer.cpf === cpf);
 
   return response.status(201).send({
     result: 'success',
     message: 'Account created successfully',
-    customer: registeredCustomer
+    customer: registeredCustomer,
   });
 });
+
+app.put('/account', verifyIfExistsAccountCPF, (request, response) => {
+  const { name } = request.body;
+  const { customer } = request;
+
+  console.log(customer, name);
+
+  customer.name = name;
+
+  return response.status(201).send({
+    result: 'success',
+    message: 'Successful updating account',
+    customer,
+  });
+});
+
+app.get('/account', verifyIfExistsAccountCPF, (request, response) => {
+  const { customer } = request;
+
+  return response.json({
+    result: 'success',
+    message: 'Success finding the account',
+    customer
+  });
+})
 
 app.get('/statement', verifyIfExistsAccountCPF, (request, response) => {
   const { customer } = request;
@@ -71,7 +96,29 @@ app.get('/statement', verifyIfExistsAccountCPF, (request, response) => {
     result: 'success',
     message: 'Statement successfully obtained',
     statement: customer.statement,
-    balance
+    balance,
+  });
+});
+
+app.get('/statement/date', verifyIfExistsAccountCPF, (request, response) => {
+  const { customer } = request;
+  const { date } = request.query;
+
+  const dateFormat = new Date(date + ' 00:00');
+
+  const statement = customer.statement.filter(
+    (statement) =>
+      statement.created_at.toDateString() ===
+      new Date(dateFormat).toDateString()
+  );
+
+  const balance = getBalance(customer.statement);
+
+  return response.json({
+    result: 'success',
+    message: 'Statement by Date successfully obtained',
+    statement: statement,
+    balance,
   });
 });
 
@@ -111,8 +158,8 @@ app.post('/withdraw', verifyIfExistsAccountCPF, (request, response) => {
   const statementOperation = {
     amount,
     created_at: new Date(),
-    type: "debit",
-  }
+    type: 'debit',
+  };
 
   customer.statement.push(statementOperation);
 
@@ -124,5 +171,7 @@ app.post('/withdraw', verifyIfExistsAccountCPF, (request, response) => {
     balance: updateBalance,
   });
 });
+
+
 
 app.listen(3333);
