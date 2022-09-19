@@ -80,12 +80,32 @@ app.put('/account', verifyIfExistsAccountCPF, (request, response) => {
 app.get('/account', verifyIfExistsAccountCPF, (request, response) => {
   const { customer } = request;
 
-  return response.json({
+  return response.status(200).json({
     result: 'success',
     message: 'Success finding the account',
-    customer
+    data: customer,
   });
-})
+});
+
+app.get('/account/listAll', (request, response) => {
+  return response.status(200).json({
+    result: 'success',
+    message: 'Success in listing all accounts',
+    data: customers,
+  });
+});
+
+app.delete('/account', verifyIfExistsAccountCPF, (request, response) => {
+  const { customer } = request;
+
+  customers.splice(customer, 1);
+
+  return response.status(200).json({
+    result: 'success',
+    message: 'Successful in deleting account',
+    data: customers,
+  });
+});
 
 app.get('/statement', verifyIfExistsAccountCPF, (request, response) => {
   const { customer } = request;
@@ -95,8 +115,7 @@ app.get('/statement', verifyIfExistsAccountCPF, (request, response) => {
   return response.json({
     result: 'success',
     message: 'Statement successfully obtained',
-    statement: customer.statement,
-    balance,
+    data: { statement: customer.statement, balance },
   });
 });
 
@@ -117,8 +136,7 @@ app.get('/statement/date', verifyIfExistsAccountCPF, (request, response) => {
   return response.json({
     result: 'success',
     message: 'Statement by Date successfully obtained',
-    statement: statement,
-    balance,
+    data: { statement: statement, balance },
   });
 });
 
@@ -135,10 +153,13 @@ app.post('/deposit', verifyIfExistsAccountCPF, (request, response) => {
   };
 
   customer.statement.push(statementOperation);
+  const balance = getBalance(customer.statement);
 
-  return response
-    .status(201)
-    .send({ result: 'success', message: 'Deposit made successfully' });
+  return response.status(201).send({
+    result: 'success',
+    message: 'Deposit made successfully',
+    data: { customer, balance, operation: statementOperation },
+  });
 });
 
 app.post('/withdraw', verifyIfExistsAccountCPF, (request, response) => {
@@ -168,10 +189,20 @@ app.post('/withdraw', verifyIfExistsAccountCPF, (request, response) => {
   return response.status(201).send({
     result: 'success',
     message: 'Successful withdrawal',
-    balance: updateBalance,
+    data: { customer, balance: updateBalance, operation: statementOperation },
   });
 });
 
+app.get('/balance', verifyIfExistsAccountCPF, (request, response) => {
+  const { customer } = request;
 
+  const balance = getBalance(customer.statement);
+
+  return response.status(201).send({
+    result: 'success',
+    message: 'Success in obtaining the account balance',
+    data: { customer, balance: balance },
+  });
+});
 
 app.listen(3333);
